@@ -16,6 +16,8 @@ public class Enemy {
     private long lastUpdate;
     private static final long MOVE_DELAY = 1000;
     private int aggressionLevel;
+    private static final long ATTACK_DELAY = 1000; //ATTACK DELAY (1 SECOND)
+    private long lastAttackTime;
 
     public Enemy(int x, int y, int health, int speed, String spritePath) {
         this.x = x;
@@ -78,6 +80,19 @@ public class Enemy {
     
     public int getHealth() {
         return health;
+    }
+  
+    public boolean canAttack(){
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastAttackTime >= ATTACK_DELAY) {
+            lastAttackTime = currentTime;
+            return true;
+        }
+        return false;
+    }
+    
+    public boolean isDead() {
+        return this.health <= 0;
     }
   
 }

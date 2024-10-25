@@ -12,6 +12,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import javax.imageio.ImageIO;
+import java.util.Random;
 
 public class GamePanel extends JPanel implements Runnable, KeyListener {
     private Player player;
@@ -23,6 +24,8 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
     private int bottomBoundary = 570;
     private int boundaryLineThickness = 5;
     private ArrayList<Enemy> enemies;
+    private long lastEnemySpawnTime = 0;
+    private static final long ENEMY_SPAWN_DELAY = 10000; //10 SECONDS
 
     public GamePanel() {
         setPreferredSize(new Dimension(800, 720));
@@ -61,7 +64,6 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
         }
 
         drawBoundary(g2d);
-
         player.draw(g);
 
         for (Enemy enemy : enemies) {
@@ -80,37 +82,43 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
     @Override
     public void run() {
         while (true) {
+            long currentTime = System.currentTimeMillis();
+
             player.update(leftBoundary, rightBoundary, topBoundary, bottomBoundary);
 
+            if (currentTime - lastEnemySpawnTime >= ENEMY_SPAWN_DELAY) {
+                spawnEnemy();
+                lastEnemySpawnTime = currentTime;
+            }
+
+            ArrayList<Enemy> enemiesToRemove = new ArrayList<>();
             for (Enemy enemy : enemies) {
                 enemy.update(player);
 
-                if (checkCollision(player, enemy)) {
+                if (enemy.isDead()) {
+                    enemiesToRemove.add(enemy);
+                } else if (checkCollision(player, enemy) && enemy.canAttack()) {
                     player.takeDamage(10);
                     System.out.println("Player hit by enemy! Remaining health: " + player.getHealth());
                 }
 
-                if (player.isAttacking() && checkAttackRange(player, enemy)) {
-                    int damage = 0;
-
-                    // Determine attack type and apply damage
-                    if (player.isJab()) {
-                        damage = 20;
-                        System.out.println("Player used Jab!");
-                    } else if (player.isSwipe()) {
-                        damage = 10;
-                        System.out.println("Player used Swipe!");
-                    }
-
+                // Check if the player is attacking
+                if (player.isJabbing() && checkAttackRange(player, enemy)) {
+                    int damage = 20; // Jab damage
                     enemy.takeDamage(damage);
-                    System.out.println("Enemy hit by player! Remaining health: " + enemy.getHealth());
+                    System.out.println("Enemy hit by player jab! Remaining health: " + enemy.getHealth());
+                } else if (player.isSwiping() && checkAttackRange(player, enemy)) {
+                    int damage = 10; // Swipe damage
+                    enemy.takeDamage(damage);
+                    System.out.println("Enemy hit by player swipe! Remaining health: " + enemy.getHealth());
                 }
             }
+            enemies.removeAll(enemiesToRemove);
 
             repaint();
 
             try {
-                Thread.sleep(16);
+                Thread.sleep(16); // Update every frame
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -138,5 +146,12 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
     @Override
     public void keyTyped(KeyEvent e) {
         // Not used
+    }
+    
+    public void spawnEnemy() {
+        Random rand = new Random();
+        int x = rand.nextInt(rightBoundary - leftBoundary) + leftBoundary;
+        int y = rand.nextInt(bottomBoundary - topBoundary) + topBoundary;
+        enemies.add(new Enemy(x, y, 100, 1,"resources/goblin.png"));
     }
 }
