@@ -17,6 +17,7 @@ public class Player {
     private boolean rolling = false;
     private int rollDuration = 200;
     private long rollEndTime = 0;
+    private int health = 100;
 
     private boolean up, down, left, right;
 
@@ -59,6 +60,19 @@ public class Player {
             e.printStackTrace();
         }
     }
+    
+    public void takeDamage(int damage) {
+        this.health -= damage;
+        if (this.health <= 0) {
+            this.health = 0;
+            // Handle player death if needed
+        }
+    }
+
+    public boolean isAttacking() {
+        return isJabbing || isSwiping;
+    }
+
 
     
     public int getX()
@@ -236,4 +250,27 @@ public class Player {
                 break;
         }
     }
+    
+    public int getSpeed() {
+        return speed;
+    }
+    
+    public String getDirection() {
+        return lastDirection;
+    }
+    
+    public int getHealth() {
+        return health;
+    }
+    
+    public boolean isJab() {
+        return isJabbing;
+    }
+    
+    public boolean isSwipe() {
+        return isSwiping;
+    }
+    
 }
+
+   
