@@ -31,7 +31,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
         player = new Player(400, 300);
 
         try {
-            backgroundImage = ImageIO.read(new File("bg1.jpg")); //LOADING BACKGROUND
+            backgroundImage = ImageIO.read(new File("resources/bg.jpg")); //LOADING BACKGROUND
             bgWidth = backgroundImage.getWidth(null);
             bgHeight = backgroundImage.getHeight(null);
             System.out.println("Image loaded successfully");
