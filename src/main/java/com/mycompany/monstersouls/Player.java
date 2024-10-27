@@ -1,9 +1,6 @@
 package com.mycompany.monstersouls;
 
-import java.awt.Color;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Image;
+import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.geom.AffineTransform;
 
@@ -18,9 +15,12 @@ public class Player {
     private long lastJabTime = 0;
     private long lastSwipeTime = 0;
     private static final long ATTACK_DELAY = 1000;
+    private static final int HITBOX_WIDTH = 32; // Damage hitbox size
+    private static final int HITBOX_HEIGHT = 32; // Damage hitbox size
+    private static final int ATTACK_HITBOX_WIDTH = 48; // Attack hitbox size
+    private static final int ATTACK_HITBOX_HEIGHT = 48; // Attack hitbox size
 
     private boolean up, down, left, right;
-
     private Image normalSprite;
     private Image rollSprite;
     private Image[] jabSprites;
@@ -30,8 +30,7 @@ public class Player {
 
     private long jabCooldown = 250;
     private long swipeCooldown = 500;
-    private double rotationAngle = Math.toRadians(90); // Initializes facing down
-
+    private double rotationAngle = Math.toRadians(90);
     private boolean isJabbing = false;
     private boolean isSwiping = false;
     private String lastDirection = "DOWN";
@@ -40,7 +39,6 @@ public class Player {
         this.x = startX;
         this.y = startY;
 
-        // Load all necessary sprites using SpriteLoader
         normalSprite = SpriteLoader.loadSprite("resources/player.png");
         rollSprite = SpriteLoader.loadSprite("resources/roll.png");
         jabSprites = new Image[]{
@@ -52,7 +50,7 @@ public class Player {
                 SpriteLoader.loadSprite("resources/swipe.png")
         };
     }
-    
+
     public void takeDamage(int damage) {
         this.health -= damage;
         if (this.health <= 0) {
@@ -67,6 +65,10 @@ public class Player {
 
     public int getX() { return x; }
     public int getY() { return y; }
+    public int getHealth() { return health; }
+
+    public boolean isJabbing() { return isJabbing; }
+    public boolean isSwiping() { return isSwiping; }
 
     public void update(int leftBoundary, int rightBoundary, int topBoundary, int bottomBoundary) {
         if (rolling) {
@@ -92,13 +94,6 @@ public class Player {
 
             x = Math.max(leftBoundary, Math.min(x, rightBoundary));
             y = Math.max(topBoundary, Math.min(y, bottomBoundary));
-
-            if (moveX != 0 || moveY != 0) {
-                if (moveX > 0 && moveY > 0) { rotationAngle = Math.toRadians(45 + 90); lastDirection = "DOWN-RIGHT"; }
-                else if (moveX > 0 && moveY < 0) { rotationAngle = Math.toRadians(315 + 90); lastDirection = "UP-RIGHT"; }
-                else if (moveX < 0 && moveY > 0) { rotationAngle = Math.toRadians(135 + 90); lastDirection = "DOWN-LEFT"; }
-                else if (moveX < 0 && moveY < 0) { rotationAngle = Math.toRadians(225 + 90); lastDirection = "UP-LEFT"; }
-            }
         }
 
         if (isJabbing) {
@@ -138,6 +133,16 @@ public class Player {
 
         g2d.drawImage(currentSprite, transform, null);
         g2d.setTransform(oldTransform);
+
+        // Draw damage hitbox
+        g.setColor(new Color(0, 0, 255, 100)); // Blue color with transparency
+        g.fillRect(x - HITBOX_WIDTH / 2, y - HITBOX_HEIGHT / 2, HITBOX_WIDTH, HITBOX_HEIGHT);
+
+        // Draw attack hitbox if attacking
+        if (isJabbing || isSwiping) {
+            g.setColor(new Color(255, 0, 0, 100)); // Red color for attack hitbox
+            g.fillRect(x - ATTACK_HITBOX_WIDTH / 2, y - ATTACK_HITBOX_HEIGHT / 2, ATTACK_HITBOX_WIDTH, ATTACK_HITBOX_HEIGHT);
+        }
     }
 
     public void handleKeyPress(KeyEvent e) {
@@ -196,40 +201,27 @@ public class Player {
             case "DOWN": y = Math.min(y + speed, bottomBoundary); break;
             case "LEFT": x = Math.max(x - speed, leftBoundary); break;
             case "RIGHT": x = Math.min(x + speed, rightBoundary); break;
-            case "UP-RIGHT": y = Math.max(y - speed, topBoundary); x = Math.min(x + speed, rightBoundary); break;
-            case "UP-LEFT": y = Math.max(y - speed, topBoundary); x = Math.max(x - speed, leftBoundary); break;
-            case "DOWN-RIGHT": y = Math.min(y + speed, bottomBoundary); x = Math.min(x + speed, rightBoundary); break;
-            case "DOWN-LEFT": y = Math.min(y + speed, bottomBoundary); x = Math.max(x - speed, leftBoundary); break;
         }
     }
-    
-    public int getSpeed(){
-        return speed;
-    }
-    
-    public String getDirection(){
-        return lastDirection;
-    }
-    
-    public int getHealth() {
-        return health;
-    }
-    
+
     public boolean canJab() {
         return System.currentTimeMillis() - lastJabTime >= ATTACK_DELAY;
     }
-    
+
     public boolean canSwipe() {
         return System.currentTimeMillis() - lastSwipeTime >= ATTACK_DELAY;
     }
-    
-    public boolean isJabbing() {
-    return isJabbing;
-}
 
-    public boolean isSwiping() {
-        return isSwiping;
-}
+    public boolean isAttackingEnemy(Enemy enemy) {
+        // Use the attack hitbox dimensions
+        Rectangle attackHitbox = new Rectangle(
+            x - ATTACK_HITBOX_WIDTH / 2,
+            y - ATTACK_HITBOX_HEIGHT / 2,
+            ATTACK_HITBOX_WIDTH,
+            ATTACK_HITBOX_HEIGHT
+        );
 
-    
+        // Check if the attack hitbox intersects with the enemy's hitbox
+        return attackHitbox.intersects(enemy.getHitbox());
+    }
 }
