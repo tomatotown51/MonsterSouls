@@ -16,8 +16,10 @@ public class Enemy {
     private long lastUpdate;
     private static final long MOVE_DELAY = 1000;
     private int aggressionLevel;
-    private static final long ATTACK_DELAY = 1000; //ATTACK DELAY (1 SECOND)
-    private long lastAttackTime;
+    private static final long ATTACK_DELAY = 1000; //ENEMY
+    private long lastAttackTime; //ENEMY
+    private long lastHitTime; //PLAYER
+    private static final long HIT_DELAY = 100; //PLAYER
 
     public Enemy(int x, int y, int health, int speed, String spritePath) {
         this.x = x;
@@ -26,11 +28,29 @@ public class Enemy {
         this.speed = speed;
         this.aggressionLevel = 5;
         this.lastUpdate = System.currentTimeMillis();
+        this.lastAttackTime = 0;  // Initialize to allow first attack
 
         try {
             this.sprite = ImageIO.read(new File(spritePath));
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    public boolean canAttack() {
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastAttackTime >= ATTACK_DELAY) {
+            lastAttackTime = currentTime;
+            return true;
+        }
+        return false;
+    }
+
+    public void takeDamage(int damage) {
+        this.health -= damage;
+        if (this.health <= 0) {
+            this.health = 0;
+            // Handle enemy death if needed
         }
     }
 
@@ -52,47 +72,24 @@ public class Enemy {
 
             lastUpdate = currentTime;
         }
-
-        if (aggressionLevel > 7) {
-            // Implement additional AI behavior if needed
-        }
-    }
-
-    public void takeDamage(int damage) {
-        this.health -= damage;
-        if (this.health <= 0) {
-            this.health = 0;
-            // Handle enemy death if needed
-        }
     }
 
     public void draw(Graphics g) {
         g.drawImage(sprite, x, y, null);
     }
-
-    public int getX() {
-        return x;
-    }
-
-    public int getY() {
-        return y;
-    }
     
-    public int getHealth() {
-        return health;
+    public boolean canBeHit() {
+    long currentTime = System.currentTimeMillis();
+    if (currentTime - lastHitTime >= HIT_DELAY) {
+        lastHitTime = currentTime;
+        return true;
     }
-  
-    public boolean canAttack(){
-        long currentTime = System.currentTimeMillis();
-        if (currentTime - lastAttackTime >= ATTACK_DELAY) {
-            lastAttackTime = currentTime;
-            return true;
-        }
-        return false;
-    }
-    
-    public boolean isDead() {
-        return this.health <= 0;
-    }
-  
+    return false;
+}
+
+
+    public int getX() { return x; }
+    public int getY() { return y; }
+    public int getHealth() { return health; }
+    public boolean isDead() { return this.health <= 0; }
 }

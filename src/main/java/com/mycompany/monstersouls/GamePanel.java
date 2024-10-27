@@ -102,16 +102,16 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
                     System.out.println("Player hit by enemy! Remaining health: " + player.getHealth());
                 }
 
-                // Check if the player is attacking
-                if (player.isJabbing() && checkAttackRange(player, enemy)) {
-                    int damage = 20; // Jab damage
-                    enemy.takeDamage(damage);
-                    System.out.println("Enemy hit by player jab! Remaining health: " + enemy.getHealth());
-                } else if (player.isSwiping() && checkAttackRange(player, enemy)) {
-                    int damage = 10; // Swipe damage
-                    enemy.takeDamage(damage);
-                    System.out.println("Enemy hit by player swipe! Remaining health: " + enemy.getHealth());
-                }
+               if (player.isJabbing() && checkAttackRange(player, enemy) && enemy.canBeHit()) {
+    int damage = 20; // Jab damage
+    enemy.takeDamage(damage);
+    System.out.println("Enemy hit by player jab! Remaining health: " + enemy.getHealth());
+} else if (player.isSwiping() && checkAttackRange(player, enemy) && enemy.canBeHit()) {
+    int damage = 10; // Swipe damage
+    enemy.takeDamage(damage);
+    System.out.println("Enemy hit by player swipe! Remaining health: " + enemy.getHealth());
+}
+
             }
             enemies.removeAll(enemiesToRemove);
 

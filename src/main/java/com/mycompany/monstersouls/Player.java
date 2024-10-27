@@ -53,7 +53,7 @@ public class Player {
                 ImageIO.read(new File("resources/playerAttack2.png"))
             };
             
-            swipeSprites = new Image[]{ //RAN OUT OF TIME FOR ANIMATION
+            swipeSprites = new Image[]{ //RAN OUT OF TIME FOR MORE ANIMATIONS
                 ImageIO.read(new File("resources/swipe.png"))
             };
         } catch (IOException e) {
