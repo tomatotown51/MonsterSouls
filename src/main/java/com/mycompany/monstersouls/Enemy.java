@@ -2,9 +2,6 @@ package com.mycompany.monstersouls;
 
 import java.awt.Graphics;
 import java.awt.Image;
-import java.io.File;
-import java.io.IOException;
-import javax.imageio.ImageIO;
 
 public class Enemy {
     private int x, y;
@@ -16,10 +13,10 @@ public class Enemy {
     private long lastUpdate;
     private static final long MOVE_DELAY = 1000;
     private int aggressionLevel;
-    private static final long ATTACK_DELAY = 1000; //ENEMY
-    private long lastAttackTime; //ENEMY
-    private long lastHitTime; //PLAYER
-    private static final long HIT_DELAY = 100; //PLAYER
+    private static final long ATTACK_DELAY = 1000; // ENEMY
+    private long lastAttackTime; // ENEMY
+    private long lastHitTime; // PLAYER
+    private static final long HIT_DELAY = 100; // PLAYER
 
     public Enemy(int x, int y, int health, int speed, String spritePath) {
         this.x = x;
@@ -29,12 +26,7 @@ public class Enemy {
         this.aggressionLevel = 5;
         this.lastUpdate = System.currentTimeMillis();
         this.lastAttackTime = 0;  // Initialize to allow first attack
-
-        try {
-            this.sprite = ImageIO.read(new File(spritePath));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        this.sprite = SpriteLoader.loadSprite(spritePath);
     }
 
     public boolean canAttack() {
@@ -79,14 +71,13 @@ public class Enemy {
     }
     
     public boolean canBeHit() {
-    long currentTime = System.currentTimeMillis();
-    if (currentTime - lastHitTime >= HIT_DELAY) {
-        lastHitTime = currentTime;
-        return true;
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastHitTime >= HIT_DELAY) {
+            lastHitTime = currentTime;
+            return true;
+        }
+        return false;
     }
-    return false;
-}
-
 
     public int getX() { return x; }
     public int getY() { return y; }

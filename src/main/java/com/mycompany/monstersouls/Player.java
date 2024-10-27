@@ -5,9 +5,6 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.event.KeyEvent;
-import java.io.File;
-import java.io.IOException;
-import javax.imageio.ImageIO;
 import java.awt.geom.AffineTransform;
 
 public class Player {
@@ -33,32 +30,27 @@ public class Player {
 
     private long jabCooldown = 250;
     private long swipeCooldown = 500;
-    private double rotationAngle = Math.toRadians(90); //INITIALIZE FACING DOWN
+    private double rotationAngle = Math.toRadians(90); // Initializes facing down
 
     private boolean isJabbing = false;
     private boolean isSwiping = false;
     private String lastDirection = "DOWN";
 
-    public Player(int startX, int startY) { //PLAYER OBJECT
-        this.x = startX; //COORDINATES
+    public Player(int startX, int startY) {
+        this.x = startX;
         this.y = startY;
 
-        try { //TRY LOADING SPRITES
-            normalSprite = ImageIO.read(new File("resources/player.png"));
-            rollSprite = ImageIO.read(new File("resources/roll.png"));
-            //ARRAY OF IMAGES FOR ANIMATION
-            jabSprites = new Image[]{
-                ImageIO.read(new File("resources/playerAttack1.png")),
-                ImageIO.read(new File("resources/player.png")),
-                ImageIO.read(new File("resources/playerAttack2.png"))
-            };
-            
-            swipeSprites = new Image[]{ //RAN OUT OF TIME FOR MORE ANIMATIONS
-                ImageIO.read(new File("resources/swipe.png"))
-            };
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        // Load all necessary sprites using SpriteLoader
+        normalSprite = SpriteLoader.loadSprite("resources/player.png");
+        rollSprite = SpriteLoader.loadSprite("resources/roll.png");
+        jabSprites = new Image[]{
+                SpriteLoader.loadSprite("resources/playerAttack1.png"),
+                SpriteLoader.loadSprite("resources/player.png"),
+                SpriteLoader.loadSprite("resources/playerAttack2.png")
+        };
+        swipeSprites = new Image[]{
+                SpriteLoader.loadSprite("resources/swipe.png")
+        };
     }
     
     public void takeDamage(int damage) {
@@ -76,94 +68,57 @@ public class Player {
     public int getX() { return x; }
     public int getY() { return y; }
 
-    // UPDATE METHOD TO ENFORCE BOUNDARY
-public void update(int leftBoundary, int rightBoundary, int topBoundary, int bottomBoundary) {
-    // ROLLING
-    if (rolling) {
-        if (System.currentTimeMillis() < rollEndTime) {
-            move(lastDirection, rollSpeed, leftBoundary, rightBoundary, topBoundary, bottomBoundary);
+    public void update(int leftBoundary, int rightBoundary, int topBoundary, int bottomBoundary) {
+        if (rolling) {
+            if (System.currentTimeMillis() < rollEndTime) {
+                move(lastDirection, rollSpeed, leftBoundary, rightBoundary, topBoundary, bottomBoundary);
+            } else {
+                rolling = false;
+            }
         } else {
-            rolling = false;
-        }
-    } else {
-        // Store the movement vectors
-        double moveX = 0;
-        double moveY = 0;
+            double moveX = 0;
+            double moveY = 0;
 
-        // Allow for diagonal movement
-        if (up) {
-            moveY -= speed; // Move up
-            rotationAngle = Math.toRadians(270 + 90); // UP
-            lastDirection = "UP";
-        }
-        if (down) {
-            moveY += speed; // Move down
-            rotationAngle = Math.toRadians(90 + 90); // DOWN
-            lastDirection = "DOWN";
-        }
-        if (left) {
-            moveX -= speed; // Move left
-            rotationAngle = Math.toRadians(180 + 90); // LEFT
-            lastDirection = "LEFT";
-        }
-        if (right) {
-            moveX += speed; // Move right
-            rotationAngle = Math.toRadians(0 + 90); // RIGHT
-            lastDirection = "RIGHT";
+            if (up) { moveY -= speed; rotationAngle = Math.toRadians(270 + 90); lastDirection = "UP"; }
+            if (down) { moveY += speed; rotationAngle = Math.toRadians(90 + 90); lastDirection = "DOWN"; }
+            if (left) { moveX -= speed; rotationAngle = Math.toRadians(180 + 90); lastDirection = "LEFT"; }
+            if (right) { moveX += speed; rotationAngle = Math.toRadians(0 + 90); lastDirection = "RIGHT"; }
+
+            double magnitude = Math.sqrt(moveX * moveX + moveY * moveY);
+            if (magnitude > 0) { moveX /= magnitude; moveY /= magnitude; }
+
+            x += moveX * speed;
+            y += moveY * speed;
+
+            x = Math.max(leftBoundary, Math.min(x, rightBoundary));
+            y = Math.max(topBoundary, Math.min(y, bottomBoundary));
+
+            if (moveX != 0 || moveY != 0) {
+                if (moveX > 0 && moveY > 0) { rotationAngle = Math.toRadians(45 + 90); lastDirection = "DOWN-RIGHT"; }
+                else if (moveX > 0 && moveY < 0) { rotationAngle = Math.toRadians(315 + 90); lastDirection = "UP-RIGHT"; }
+                else if (moveX < 0 && moveY > 0) { rotationAngle = Math.toRadians(135 + 90); lastDirection = "DOWN-LEFT"; }
+                else if (moveX < 0 && moveY < 0) { rotationAngle = Math.toRadians(225 + 90); lastDirection = "UP-LEFT"; }
+            }
         }
 
-        // Calculate the magnitude for normalization
-        double magnitude = Math.sqrt(moveX * moveX + moveY * moveY);
-        if (magnitude > 0) {
-            // Normalize the movement to ensure consistent speed
-            moveX /= magnitude;
-            moveY /= magnitude;
+        if (isJabbing) {
+            if (System.currentTimeMillis() - lastJabTime < jabCooldown) {
+                currentJabFrame = (int) ((System.currentTimeMillis() - lastJabTime) / (jabCooldown / jabSprites.length)) % jabSprites.length;
+            } else {
+                resetJab();
+            }
         }
 
-        // Scale the movement by speed
-        x += moveX * speed;
-        y += moveY * speed;
-
-        // Boundary checks
-        x = Math.max(leftBoundary, Math.min(x, rightBoundary));
-        y = Math.max(topBoundary, Math.min(y, bottomBoundary));
-
-        // Handle diagonal movements
-        if (moveX != 0 || moveY != 0) {
-            if (moveX > 0 && moveY > 0) {
-                rotationAngle = Math.toRadians(45 + 90); // DOWN-RIGHT
-                lastDirection = "DOWN-RIGHT";
-            } else if (moveX > 0 && moveY < 0) {
-                rotationAngle = Math.toRadians(315 + 90); // UP-RIGHT
-                lastDirection = "UP-RIGHT";
-            } else if (moveX < 0 && moveY > 0) {
-                rotationAngle = Math.toRadians(135 + 90); // DOWN-LEFT
-                lastDirection = "DOWN-LEFT";
-            } else if (moveX < 0 && moveY < 0) {
-                rotationAngle = Math.toRadians(225 + 90); // UP-LEFT
-                lastDirection = "UP-LEFT";
+        if (isSwiping) {
+            if (System.currentTimeMillis() - lastSwipeTime < swipeCooldown) {
+                currentSwipeFrame = (int) ((System.currentTimeMillis() - lastSwipeTime) / (swipeCooldown / swipeSprites.length));
+            } else {
+                resetSwipe();
             }
         }
     }
 
-    if (isJabbing) {
-        if (System.currentTimeMillis() - lastJabTime < jabCooldown) {
-            currentJabFrame = (int) ((System.currentTimeMillis() - lastJabTime) / (jabCooldown / jabSprites.length)) % jabSprites.length;
-        } else {
-            resetJab(); // Reset after jab cooldown
-        }
-    }
-
-    if (isSwiping) {
-        if (System.currentTimeMillis() - lastSwipeTime < swipeCooldown) {
-            currentSwipeFrame = (int) ((System.currentTimeMillis() - lastSwipeTime) / (swipeCooldown / swipeSprites.length));
-        } else {
-            resetSwipe(); // Reset after swipe cooldown
-        }
-    }
-}
-
-    public void draw(Graphics g) { //SPRITE DRAWING
+    public void draw(Graphics g) {
         Graphics2D g2d = (Graphics2D) g;
         AffineTransform oldTransform = g2d.getTransform();
 
@@ -173,7 +128,7 @@ public void update(int leftBoundary, int rightBoundary, int topBoundary, int bot
         } else if (isJabbing) {
             currentSprite = jabSprites[currentJabFrame % jabSprites.length];
         } else if (isSwiping) {
-            currentSprite = swipeSprites[currentJabFrame % jabSprites.length];
+            currentSprite = swipeSprites[currentSwipeFrame % swipeSprites.length];
         }
 
         AffineTransform transform = new AffineTransform();
@@ -185,7 +140,7 @@ public void update(int leftBoundary, int rightBoundary, int topBoundary, int bot
         g2d.setTransform(oldTransform);
     }
 
-    public void handleKeyPress(KeyEvent e) { //HANDLING CONTROLS
+    public void handleKeyPress(KeyEvent e) {
         int key = e.getKeyCode();
         if (key == KeyEvent.VK_W || key == KeyEvent.VK_UP) up = true;
         if (key == KeyEvent.VK_S || key == KeyEvent.VK_DOWN) down = true;
@@ -196,7 +151,7 @@ public void update(int leftBoundary, int rightBoundary, int topBoundary, int bot
         if (key == KeyEvent.VK_P) swipe();
     }
 
-    public void handleKeyRelease(KeyEvent e) { 
+    public void handleKeyRelease(KeyEvent e) {
         int key = e.getKeyCode();
         if (key == KeyEvent.VK_W || key == KeyEvent.VK_UP) up = false;
         if (key == KeyEvent.VK_S || key == KeyEvent.VK_DOWN) down = false;
@@ -204,83 +159,55 @@ public void update(int leftBoundary, int rightBoundary, int topBoundary, int bot
         if (key == KeyEvent.VK_D || key == KeyEvent.VK_RIGHT) right = false;
     }
 
-    private void roll() { //ROLL
+    private void roll() {
         if (!rolling) {
             rolling = true;
             rollEndTime = System.currentTimeMillis() + rollDuration;
         }
     }
 
-    public void jab() { // JAB ATTACK
+    public void jab() {
         if (canJab()) {
             isJabbing = true;
             lastJabTime = System.currentTimeMillis();
         }
     }
 
-    public void swipe() { // SWIPE ATTACK
+    public void swipe() {
         if (canSwipe()) {
             isSwiping = true;
             lastSwipeTime = System.currentTimeMillis();
         }
     }
 
-    public void resetJab() { // RESET JAB ATTACK
+    public void resetJab() {
         isJabbing = false;
         currentJabFrame = 0;
     }
 
-    public void resetSwipe() { // RESET SWIPE ATTACK
+    public void resetSwipe() {
         isSwiping = false;
         currentSwipeFrame = 0;
     }
 
-    public boolean isJabbing() {
-        return isJabbing;
-    }
-
-    public boolean isSwiping() {
-        return isSwiping;
-    }
-
-    private void move(String direction, int speed, int leftBoundary, int rightBoundary, int topBoundary, int bottomBoundary) { //PLAYER MOVEMENT LOGIC
+    private void move(String direction, int speed, int leftBoundary, int rightBoundary, int topBoundary, int bottomBoundary) {
         switch (direction) {
-            case "UP": 
-                y = Math.max(y - speed, topBoundary); 
-                break;
-            case "DOWN": 
-                y = Math.min(y + speed, bottomBoundary); 
-                break;
-            case "LEFT": 
-                x = Math.max(x - speed, leftBoundary); 
-                break;
-            case "RIGHT": 
-                x = Math.min(x + speed, rightBoundary); 
-                break;
-            case "UP-RIGHT": 
-                y = Math.max(y - speed, topBoundary); 
-                x = Math.min(x + speed, rightBoundary); 
-                break;
-            case "UP-LEFT": 
-                y = Math.max(y - speed, topBoundary); 
-                x = Math.max(x - speed, leftBoundary); 
-                break;
-            case "DOWN-RIGHT": 
-                y = Math.min(y + speed, bottomBoundary); 
-                x = Math.min(x + speed, rightBoundary); 
-                break;
-            case "DOWN-LEFT": 
-                y = Math.min(y + speed, bottomBoundary); 
-                x = Math.max(x - speed, leftBoundary); 
-                break;
+            case "UP": y = Math.max(y - speed, topBoundary); break;
+            case "DOWN": y = Math.min(y + speed, bottomBoundary); break;
+            case "LEFT": x = Math.max(x - speed, leftBoundary); break;
+            case "RIGHT": x = Math.min(x + speed, rightBoundary); break;
+            case "UP-RIGHT": y = Math.max(y - speed, topBoundary); x = Math.min(x + speed, rightBoundary); break;
+            case "UP-LEFT": y = Math.max(y - speed, topBoundary); x = Math.max(x - speed, leftBoundary); break;
+            case "DOWN-RIGHT": y = Math.min(y + speed, bottomBoundary); x = Math.min(x + speed, rightBoundary); break;
+            case "DOWN-LEFT": y = Math.min(y + speed, bottomBoundary); x = Math.max(x - speed, leftBoundary); break;
         }
     }
     
-    public int getSpeed() {
+    public int getSpeed(){
         return speed;
     }
     
-    public String getDirection() {
+    public String getDirection(){
         return lastDirection;
     }
     
@@ -295,4 +222,14 @@ public void update(int leftBoundary, int rightBoundary, int topBoundary, int bot
     public boolean canSwipe() {
         return System.currentTimeMillis() - lastSwipeTime >= ATTACK_DELAY;
     }
+    
+    public boolean isJabbing() {
+    return isJabbing;
+}
+
+    public boolean isSwiping() {
+        return isSwiping;
+}
+
+    
 }
