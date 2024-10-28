@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import javax.imageio.ImageIO;
 import java.util.Random;
+import java.awt.Font;
 
 public class GamePanel extends JPanel implements Runnable, KeyListener {
     private Player player;
@@ -26,6 +27,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
     private ArrayList<Enemy> enemies;
     private long lastEnemySpawnTime = 0;
     private static final long ENEMY_SPAWN_DELAY = 10000; //10 SECONDS
+    private int score = 0;
 
     public GamePanel() {
         setPreferredSize(new Dimension(800, 720));
@@ -52,7 +54,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
         gameThread.start();
     }
 
-    @Override
+    @Override //PAINT COMPONENT
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         Graphics2D g2d = (Graphics2D) g;
@@ -69,6 +71,9 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
         for (Enemy enemy : enemies) {
             enemy.draw(g);
         }
+        
+        drawHP(g);
+        drawScore(g);
     }
 
     private void drawBoundary(Graphics2D g2d) {
@@ -97,6 +102,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
 
                 if (enemy.isDead()) {
                     enemiesToRemove.add(enemy);
+                    score++;
                 } else if (checkCollision(player, enemy) && enemy.canAttack()) {
                     player.takeDamage(10);
                     System.out.println("Player hit by enemy! Remaining health: " + player.getHealth());
@@ -154,4 +160,21 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
         int y = rand.nextInt(bottomBoundary - topBoundary) + topBoundary;
         enemies.add(new Enemy(x, y, 100, 1,"resources/goblin.png"));
     }
+    
+    private void drawHP(Graphics g) {
+    g.setColor(Color.RED);
+    g.fillRect(leftBoundary, bottomBoundary + 10, player.getHealth() * 2, 20);
+
+    g.setColor(Color.BLACK);
+    g.drawRect(leftBoundary, bottomBoundary + 10, 200, 20);  // Outline for the HP bar
+    g.drawString("HP: " + player.getHealth(), leftBoundary + 5, bottomBoundary + 25);
+}
+    
+    private void drawScore(Graphics g) {
+    g.setColor(Color.BLACK); // Set color to black for the score
+    g.setFont(new Font("Arial", Font.PLAIN, 16)); // Set font style and size
+    g.drawString("Score: " + score, leftBoundary, bottomBoundary + 55); // Position it below the HP bar
+}
+
+
 }
