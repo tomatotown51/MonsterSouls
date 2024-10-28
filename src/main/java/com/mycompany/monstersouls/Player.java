@@ -55,7 +55,7 @@ public class Player {
         this.health -= damage;
         if (this.health <= 0) {
             this.health = 0;
-            // Handle player death if needed
+            handleDeath();
         }
     }
 
@@ -223,5 +223,23 @@ public class Player {
 
         // Check if the attack hitbox intersects with the enemy's hitbox
         return attackHitbox.intersects(enemy.getHitbox());
+    }
+    
+    public boolean isDead() {
+        return this.health <= 0;
+    }
+    
+    private void handleDeath() {
+    // Add death-related code here
+    System.out.println("Player has died!");
+    // For example, stop player movement or trigger game over state
+}
+    public void setHealth(int health) {
+        this.health = health;
+    }
+    
+    public void setPosition( int x, int y) {
+        this.x = x;
+        this.y = y;
     }
 }

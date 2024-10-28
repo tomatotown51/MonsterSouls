@@ -14,6 +14,9 @@ import java.util.ArrayList;
 import javax.imageio.ImageIO;
 import java.util.Random;
 import java.awt.Font;
+import java.awt.Rectangle;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 public class GamePanel extends JPanel implements Runnable, KeyListener {
     private Player player;
@@ -28,14 +31,27 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
     private long lastEnemySpawnTime = 0;
     private static final long ENEMY_SPAWN_DELAY = 10000; //10 SECONDS
     private int score = 0;
+    private Rectangle resetButtonBounds = new Rectangle(290, 350, 120, 50);
+    private int initialX = 400;
+    private int initialY = 300;
+    private boolean isGameOver = false;
 
     public GamePanel() {
         setPreferredSize(new Dimension(800, 720));
         setFocusable(true);
         requestFocus();
         addKeyListener(this);
+        
+        addMouseListener(new MouseAdapter() {
+        @Override
+        public void mouseClicked(MouseEvent e) {
+            if (player.isDead() && resetButtonBounds.contains(e.getPoint())) {
+                resetGame(); 
+            }
+        }
+    });
 
-        player = new Player(400, 300);
+        player = new Player(initialX, initialY);
         enemies = new ArrayList<>();
         enemies.add(new Enemy(200, 200, 100, 1, "resources/skeleton.png"));
         enemies.add(new Enemy(300, 300, 120, 1, "resources/zombie.png"));
@@ -58,6 +74,12 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         Graphics2D g2d = (Graphics2D) g;
+        
+        if (player.isDead()) {
+            displayGameOver(g);
+            drawResetButton(g);
+            return;
+        }
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 3; col++) {
@@ -74,6 +96,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
         
         drawHP(g);
         drawScore(g);
+        drawControls(g);
     }
 
     private void drawBoundary(Graphics2D g2d) {
@@ -87,44 +110,46 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
     @Override
     public void run() {
         while (true) {
-            long currentTime = System.currentTimeMillis();
+            //Skip updates if the game is over
+            if (!isGameOver) {
+                long currentTime = System.currentTimeMillis();
 
-            player.update(leftBoundary, rightBoundary, topBoundary, bottomBoundary);
+                player.update(leftBoundary, rightBoundary, topBoundary, bottomBoundary);
 
-            if (currentTime - lastEnemySpawnTime >= ENEMY_SPAWN_DELAY) {
-                spawnEnemy();
-                lastEnemySpawnTime = currentTime;
-            }
-
-            ArrayList<Enemy> enemiesToRemove = new ArrayList<>();
-            for (Enemy enemy : enemies) {
-                enemy.update(player);
-
-                if (enemy.isDead()) {
-                    enemiesToRemove.add(enemy);
-                    score++;
-                } else if (checkCollision(player, enemy) && enemy.canAttack()) {
-                    player.takeDamage(10);
-                    System.out.println("Player hit by enemy! Remaining health: " + player.getHealth());
+                if (currentTime - lastEnemySpawnTime >= ENEMY_SPAWN_DELAY) {
+                    spawnEnemy();
+                    lastEnemySpawnTime = currentTime;
                 }
 
-               if (player.isJabbing() && checkAttackRange(player, enemy) && enemy.canBeHit()) {
-    int damage = 20; // Jab damage
-    enemy.takeDamage(damage);
-    System.out.println("Enemy hit by player jab! Remaining health: " + enemy.getHealth());
-} else if (player.isSwiping() && checkAttackRange(player, enemy) && enemy.canBeHit()) {
-    int damage = 10; // Swipe damage
-    enemy.takeDamage(damage);
-    System.out.println("Enemy hit by player swipe! Remaining health: " + enemy.getHealth());
-}
+                ArrayList<Enemy> enemiesToRemove = new ArrayList<>();
+                for (Enemy enemy : enemies) {
+                    enemy.update(player);
 
+                    if (enemy.isDead()) {
+                        enemiesToRemove.add(enemy);
+                        score++;
+                    } else if (checkCollision(player, enemy) && enemy.canAttack()) {
+                        player.takeDamage(10);
+                        System.out.println("Player hit by enemy! Remaining health: " + player.getHealth());
+                    }
+
+                    if (player.isJabbing() && checkAttackRange(player, enemy) && enemy.canBeHit()) {
+                        int damage = 20;
+                        enemy.takeDamage(damage);
+                        System.out.println("Enemy hit by player jab! Remaining health: " + enemy.getHealth());
+                    } else if (player.isSwiping() && checkAttackRange(player, enemy) && enemy.canBeHit()) {
+                        int damage = 10;
+                        enemy.takeDamage(damage);
+                        System.out.println("Enemy hit by player swipe! Remaining health: " + enemy.getHealth());
+                    }
+                }
+                enemies.removeAll(enemiesToRemove);
+
+                repaint();
             }
-            enemies.removeAll(enemiesToRemove);
-
-            repaint();
 
             try {
-                Thread.sleep(16); // Update every frame
+                Thread.sleep(16); //UPDATING EVERY FRAME
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -162,19 +187,66 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
     }
     
     private void drawHP(Graphics g) {
-    g.setColor(Color.RED);
-    g.fillRect(leftBoundary, bottomBoundary + 10, player.getHealth() * 2, 20);
+        g.setColor(Color.RED);
+        g.fillRect(leftBoundary, bottomBoundary + 10, player.getHealth() * 2, 20);
 
-    g.setColor(Color.BLACK);
-    g.drawRect(leftBoundary, bottomBoundary + 10, 200, 20);  // Outline for the HP bar
-    g.drawString("HP: " + player.getHealth(), leftBoundary + 5, bottomBoundary + 25);
-}
+        g.setColor(Color.BLACK);
+        g.drawRect(leftBoundary, bottomBoundary + 10, 200, 20);  //HP BAR
+        g.drawString("HP: " + player.getHealth(), leftBoundary + 5, bottomBoundary + 25);
+    }
     
     private void drawScore(Graphics g) {
-    g.setColor(Color.BLACK); // Set color to black for the score
-    g.setFont(new Font("Arial", Font.PLAIN, 16)); // Set font style and size
-    g.drawString("Score: " + score, leftBoundary, bottomBoundary + 55); // Position it below the HP bar
-}
+        g.setColor(Color.YELLOW);
+        g.setFont(new Font("Arial", Font.PLAIN, 16)); 
+        g.drawString("Score: " + score, leftBoundary, bottomBoundary + 55);
+    }
+    
+    private void displayGameOver(Graphics g) {
+        g.setColor(Color.BLACK);
+        g.setFont(new Font("Arial", Font.BOLD, 40));
+        g.drawString("Game Over", 250, 300);
+    }
 
+    private void drawResetButton(Graphics g) {
+        g.setColor(Color.LIGHT_GRAY);
+        g.fillRect(resetButtonBounds.x, resetButtonBounds.y, resetButtonBounds.width, resetButtonBounds.height);
+        g.setColor(Color.BLACK);
+        g.setFont(new Font("Arial", Font.BOLD, 20));
+        g.drawString("RESTART", resetButtonBounds.x + 20, resetButtonBounds.y + 30);
+    }
+    
+    public void resetGame() {
+        player.setHealth(100);
+        player.setPosition(initialX, initialY);
 
+        isGameOver = false;
+        score = 0;
+
+        enemies.clear();
+        enemies.add(new Enemy(200, 200, 100, 1, "resources/skeleton.png"));
+        enemies.add(new Enemy(300, 300, 120, 1, "resources/zombie.png"));
+    
+        lastEnemySpawnTime = System.currentTimeMillis();
+
+        repaint();
+    }
+
+    public void checkPlayerDeath() {
+        if (player.isDead()) {
+            isGameOver = true;
+        }
+    }
+    
+    private void drawControls(Graphics g) {
+        g.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        g.setColor(Color.YELLOW);
+        int startX = 20;
+        int startY = getHeight() - 60;
+
+        g.drawString("Controls:", startX + 550, startY - 65);
+        g.drawString("WASD/ARROW KEYS = MOVE", startX + 550, startY - 45);
+        g.drawString("O = JAB ATTACK", startX + 550, startY - 25);
+        g.drawString("P = SWIPE ATTACK", startX + 550, startY - 5);
+        g.drawString("SPACE = ROLL", startX + 550, startY + 15);
+    }
 }
