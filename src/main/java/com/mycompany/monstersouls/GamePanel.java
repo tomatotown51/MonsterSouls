@@ -20,15 +20,16 @@ import java.awt.event.MouseEvent;
 import java.sql.SQLException;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.util.List;
 
 public class GamePanel extends JPanel implements Runnable, KeyListener {
     private Player player;
     private Image backgroundImage;
     private int bgWidth, bgHeight;
-    private int leftBoundary = 50;
-    private int rightBoundary = 750;
-    private int topBoundary = 50;
-    private int bottomBoundary = 570;
+    private static int leftBoundary = 50;
+    private static int rightBoundary = 750;
+    private static int topBoundary = 50;
+    private static int bottomBoundary = 570;
     private int boundaryLineThickness = 5;
     private ArrayList<Enemy> enemies;
     private long lastEnemySpawnTime = 0;
@@ -42,6 +43,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
     private DatabaseManager dbManager;
     private Connection connection;
     private int enemyID = 1;
+
 
     public GamePanel() {
         player = new Player(initialX, initialY, 100); //int int int
@@ -67,8 +69,34 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
         });
 
         enemies = new ArrayList<>();
-        enemies.add(new Enemy(200, 200, 100, 1, "resources/skeleton.png", enemyID++));
-        enemies.add(new Enemy(300, 300, 120, 1, "resources/zombie.png", enemyID++));
+        Random rand = new Random();
+        int initialEnemies = 3;
+        
+        for (int i = 0; i<initialEnemies; i++) { 
+            int randomX = rand.nextInt(rightBoundary - leftBoundary) + leftBoundary; //GENERATING RANDOM COORDS
+            int randomY = rand.nextInt(bottomBoundary - topBoundary) + topBoundary;
+            int enemyType = rand.nextInt(2); //GENERATING RANDOM ENEMY TYPE
+            switch (enemyType) { //ENEMY(X, Y, HEALTH, SPEED, SPRITEPATH, ENEMYID++ (FOR SCORE)
+            case 0: 
+                enemies.add(new Enemy(randomX, randomY, 75, 1,"resources/skeleton.png", enemyID++));//SKELETON
+                break;
+            case 1:
+                enemies.add(new Enemy(randomX, randomY, 100, 1,"resources/zombie.png", enemyID++));//ZOMBIE
+                break;
+            case 2:
+                enemies.add(new Enemy(randomX, randomY, 50, 2,"resources/goblin.png", enemyID++)); //GOBLIN
+                break;
+            default:
+                throw new IllegalArgumentException("Unexpected random number when generating initial enemy: " + enemyType);
+            }
+        }
+        
+        
+        
+        
+        
+        
+           
 
         try {
             backgroundImage = ImageIO.read(new File("resources/bg.jpg")); //LOADING BACKGROUND
@@ -128,52 +156,54 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
     }
 
     @Override
-    public void run() {
-        while (true) {
-            if (!isGameOver && !isPaused) { //NO UPDATES IF GAME IS PAUSED OR OVER
-                long currentTime = System.currentTimeMillis();
+public void run() {
+    List<Obstacle> obstacles = new ArrayList<>(); // Initialize this with your game's obstacles
 
-                player.update(leftBoundary, rightBoundary, topBoundary, bottomBoundary);
+    while (true) {
+        if (!isGameOver && !isPaused) {
+            long currentTime = System.currentTimeMillis();
 
-                if (currentTime - lastEnemySpawnTime >= ENEMY_SPAWN_DELAY) {
-                    spawnEnemy();
-                    lastEnemySpawnTime = currentTime;
+            player.update(leftBoundary, rightBoundary, topBoundary, bottomBoundary);
+
+            if (currentTime - lastEnemySpawnTime >= ENEMY_SPAWN_DELAY) {
+                spawnEnemy();
+                lastEnemySpawnTime = currentTime;
+            }
+
+            ArrayList<Enemy> enemiesToRemove = new ArrayList<>();
+            for (Enemy enemy : enemies) {
+                enemy.update(player, obstacles); // Updated to include obstacles
+
+                if (enemy.isDead()) {
+                    enemiesToRemove.add(enemy);
+                    score++;
+                } else if (checkCollision(player, enemy) && enemy.canAttack()) {
+                    player.takeDamage(10);
+                    System.out.println("Player hit by enemy! Remaining health: " + player.getHealth());
                 }
 
-                ArrayList<Enemy> enemiesToRemove = new ArrayList<>();
-                for (Enemy enemy : enemies) {
-                    enemy.update(player);
-
-                    if (enemy.isDead()) {
-                        enemiesToRemove.add(enemy);
-                        score++;
-                    } else if (checkCollision(player, enemy) && enemy.canAttack()) {
-                        player.takeDamage(10);
-                        System.out.println("Player hit by enemy! Remaining health: " + player.getHealth());
-                    }
-
-                    if (player.isJabbing() && checkAttackRange(player, enemy) && enemy.canBeHit()) {
-                        int damage = 20;
-                        enemy.takeDamage(damage);
-                        System.out.println("Enemy hit by player jab! Remaining health: " + enemy.getHealth());
-                    } else if (player.isSwiping() && checkAttackRange(player, enemy) && enemy.canBeHit()) {
-                        int damage = 10;
-                        enemy.takeDamage(damage);
-                        System.out.println("Enemy hit by player swipe! Remaining health: " + enemy.getHealth());
-                    }
+                if (player.isJabbing() && checkAttackRange(player, enemy) && enemy.canBeHit()) {
+                    int damage = 20;
+                    enemy.takeDamage(damage);
+                    System.out.println("Enemy hit by player jab! Remaining health: " + enemy.getHealth());
+                } else if (player.isSwiping() && checkAttackRange(player, enemy) && enemy.canBeHit()) {
+                    int damage = 10;
+                    enemy.takeDamage(damage);
+                    System.out.println("Enemy hit by player swipe! Remaining health: " + enemy.getHealth());
                 }
-                enemies.removeAll(enemiesToRemove);
+            }
+            enemies.removeAll(enemiesToRemove);
 
-                repaint();
-            }
-            
-            try {
-                Thread.sleep(16); // UPDATING EVERY FRAME
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            repaint();
+        }
+        
+        try {
+            Thread.sleep(16); // UPDATING EVERY FRAME
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
+}
 
     private boolean checkCollision(Player player, Enemy enemy) {
         return Math.abs(player.getX() - enemy.getX()) < 30 && Math.abs(player.getY() - enemy.getY()) < 30;
@@ -217,7 +247,21 @@ if (e.getKeyCode() == KeyEvent.VK_ESCAPE && !isGameOver) { //PAUSE
         Random rand = new Random();
         int x = rand.nextInt(rightBoundary - leftBoundary) + leftBoundary; //SPAWN RANGE
         int y = rand.nextInt(bottomBoundary - topBoundary) + topBoundary;
-        enemies.add(new Enemy(x, y, 100, 1,"resources/goblin.png", enemyID++)); //ADDING
+        int randomNumber = rand.nextInt(2);
+        
+        switch (randomNumber) {
+            case 0: //X, Y, HEALTH, SPEED, SPRITEPATH, ENEMYID++ (SCORE)
+                enemies.add(new Enemy(x, y, 50, 3,"resources/goblin.png", enemyID++)); //GOBLIN
+                break;
+            case 1:
+                enemies.add(new Enemy(x, y, 75, 2,"resources/skeleton.png", enemyID++));//SKELETON
+                break;
+            case 2:
+                enemies.add(new Enemy(x, y, 100, 1,"resources/zombie.png", enemyID++));//ZOMBIE
+                break;
+            default:
+                throw new IllegalArgumentException("Unexpected random number when generating enemy: " + randomNumber);
+        }
     }
 
     private void drawHP(Graphics g) { //DRAW HP
@@ -264,8 +308,27 @@ if (e.getKeyCode() == KeyEvent.VK_ESCAPE && !isGameOver) { //PAUSE
 
         enemies.clear();
         enemyID = 1;
-        enemies.add(new Enemy(200, 200, 100, 1, "resources/skeleton.png", enemyID++));
-        enemies.add(new Enemy(300, 300, 120, 1, "resources/zombie.png", enemyID++));
+        enemies = new ArrayList<>();
+        Random rand = new Random();
+        int initialEnemies = 3;
+        for (int i = 0; i<initialEnemies; i++) { 
+            int randomX = rand.nextInt(rightBoundary - leftBoundary) + leftBoundary; //GENERATING RANDOM COORDS
+            int randomY = rand.nextInt(bottomBoundary - topBoundary) + topBoundary;
+            int enemyType = rand.nextInt(2); //GENERATING RANDOM ENEMY TYPE
+            switch (enemyType) { //ENEMY(X, Y, HEALTH, SPEED, SPRITEPATH, ENEMYID++ (FOR SCORE)
+            case 0: 
+                enemies.add(new Enemy(randomX, randomY, 75, 1,"resources/skeleton.png", enemyID++));//SKELETON
+                break;
+            case 1:
+                enemies.add(new Enemy(randomX, randomY, 100, 1,"resources/zombie.png", enemyID++));//ZOMBIE
+                break;
+            case 2:
+                enemies.add(new Enemy(randomX, randomY, 50, 2,"resources/goblin.png", enemyID++)); //GOBLIN
+                break;
+            default:
+                throw new IllegalArgumentException("Unexpected random number when generating initial enemy: " + enemyType);
+            }
+        }
 
         lastEnemySpawnTime = System.currentTimeMillis();
 
@@ -314,4 +377,10 @@ if (e.getKeyCode() == KeyEvent.VK_ESCAPE && !isGameOver) { //PAUSE
             ex.printStackTrace();
         }
     }
+    
+    public static int getLeftBoundary() { return leftBoundary; }
+    public static int getRightBoundary() { return rightBoundary; }
+    public static int getTopBoundary() { return topBoundary; }
+    public static int getBottomBoundary() { return bottomBoundary; }
+
 }
