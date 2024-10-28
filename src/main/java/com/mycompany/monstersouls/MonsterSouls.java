@@ -14,7 +14,9 @@ import java.awt.event.ActionListener;
 
 
 public class MonsterSouls { //
-    
+    public static void main(String[] args) {
+        new GameWindow();
+    }
 }
 
 
