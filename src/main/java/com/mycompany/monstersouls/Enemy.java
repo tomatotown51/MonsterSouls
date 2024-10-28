@@ -21,8 +21,11 @@ public class Enemy {
     private long lastHitTime;
     private static final long HIT_DELAY = 100;
     private Rectangle hitbox;
+    private int id;
+    private String type;
+    
 
-    public Enemy(int x, int y, int health, int speed, String spritePath) {
+    public Enemy(int x, int y, int health, int speed, String spritePath, int id) {
         this.x = x;
         this.y = y;
         this.health = health;
@@ -31,6 +34,7 @@ public class Enemy {
         this.lastUpdate = System.currentTimeMillis();
         this.lastAttackTime = 0;
         this.sprite = SpriteLoader.loadSprite(spritePath);
+        this.id = id;
 
         int hitboxSize = 32;
         this.hitbox = new Rectangle(x - hitboxSize / 2, y - hitboxSize / 2, hitboxSize, hitboxSize);
@@ -99,4 +103,11 @@ public class Enemy {
     public int getHealth() { return health; }
     public boolean isDead() { return this.health <= 0; }
     public Rectangle getHitbox() { return hitbox; }
+    public int getSpeed() { return speed; }
+    public int getId() { return id; }
+    public String getType() {return type; }
+    
+    private void setType(){
+        this.type = type;
+    }
 }

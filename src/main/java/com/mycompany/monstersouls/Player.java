@@ -11,14 +11,15 @@ public class Player {
     private boolean rolling = false;
     private int rollDuration = 200;
     private long rollEndTime = 0;
-    private int health = 100;
+    private int health = 100; //INITIAL PLAYER HEALTH
     private long lastJabTime = 0;
     private long lastSwipeTime = 0;
     private static final long ATTACK_DELAY = 1000;
-    private static final int HITBOX_WIDTH = 32; // Damage hitbox size
-    private static final int HITBOX_HEIGHT = 32; // Damage hitbox size
-    private static final int ATTACK_HITBOX_WIDTH = 48; // Attack hitbox size
-    private static final int ATTACK_HITBOX_HEIGHT = 48; // Attack hitbox size
+    private static final int HITBOX_WIDTH = 32; //PLAYER RECIEVE DAMAGE HITBOX
+    private static final int HITBOX_HEIGHT = 32; 
+    private static final int ATTACK_HITBOX_WIDTH = 48; //PLAYER ATTACK DAMAGE HITBOX
+    private static final int ATTACK_HITBOX_HEIGHT = 48; 
+    private String username = "PABLO";
 
     private boolean up, down, left, right;
     private Image normalSprite;
@@ -34,12 +35,15 @@ public class Player {
     private boolean isJabbing = false;
     private boolean isSwiping = false;
     private String lastDirection = "DOWN";
+    
 
-    public Player(int startX, int startY) {
+    public Player(int startX, int startY, int health) {
         this.x = startX;
         this.y = startY;
+        this.health = health;
+        this.username = username;
 
-        normalSprite = SpriteLoader.loadSprite("resources/player.png");
+        normalSprite = SpriteLoader.loadSprite("resources/player.png"); //LOADING SPRITES
         rollSprite = SpriteLoader.loadSprite("resources/roll.png");
         jabSprites = new Image[]{
                 SpriteLoader.loadSprite("resources/playerAttack1.png"),
@@ -51,7 +55,7 @@ public class Player {
         };
     }
 
-    public void takeDamage(int damage) {
+    public void takeDamage(int damage) { //TAKING DAMAGE
         this.health -= damage;
         if (this.health <= 0) {
             this.health = 0;
@@ -70,7 +74,7 @@ public class Player {
     public boolean isJabbing() { return isJabbing; }
     public boolean isSwiping() { return isSwiping; }
 
-    public void update(int leftBoundary, int rightBoundary, int topBoundary, int bottomBoundary) {
+    public void update(int leftBoundary, int rightBoundary, int topBoundary, int bottomBoundary) { //UPDATE METHOD
         if (rolling) {
             if (System.currentTimeMillis() < rollEndTime) {
                 move(lastDirection, rollSpeed, leftBoundary, rightBoundary, topBoundary, bottomBoundary);
@@ -113,7 +117,7 @@ public class Player {
         }
     }
 
-    public void draw(Graphics g) {
+    public void draw(Graphics g) { //DRAWING PLAYER SPRITES
         Graphics2D g2d = (Graphics2D) g;
         AffineTransform oldTransform = g2d.getTransform();
 
@@ -134,18 +138,20 @@ public class Player {
         g2d.drawImage(currentSprite, transform, null);
         g2d.setTransform(oldTransform);
 
-        // Draw damage hitbox
-        g.setColor(new Color(0, 0, 255, 100)); // Blue color with transparency
+        
+        //DRAWING HITBOXES FOR DEBUGGING
+        //RECEIEVE DMG HITBOX
+        g.setColor(new Color(0, 0, 255, 100)); //BLUE
         g.fillRect(x - HITBOX_WIDTH / 2, y - HITBOX_HEIGHT / 2, HITBOX_WIDTH, HITBOX_HEIGHT);
 
-        // Draw attack hitbox if attacking
+        //ATTACK HTIBOX
         if (isJabbing || isSwiping) {
-            g.setColor(new Color(255, 0, 0, 100)); // Red color for attack hitbox
+            g.setColor(new Color(255, 0, 0, 100)); //RED
             g.fillRect(x - ATTACK_HITBOX_WIDTH / 2, y - ATTACK_HITBOX_HEIGHT / 2, ATTACK_HITBOX_WIDTH, ATTACK_HITBOX_HEIGHT);
         }
     }
 
-    public void handleKeyPress(KeyEvent e) {
+    public void handleKeyPress(KeyEvent e) { //HANDLING CONTROLS
         int key = e.getKeyCode();
         if (key == KeyEvent.VK_W || key == KeyEvent.VK_UP) up = true;
         if (key == KeyEvent.VK_S || key == KeyEvent.VK_DOWN) down = true;
@@ -164,38 +170,38 @@ public class Player {
         if (key == KeyEvent.VK_D || key == KeyEvent.VK_RIGHT) right = false;
     }
 
-    private void roll() {
+    private void roll() { //ROLL
         if (!rolling) {
             rolling = true;
             rollEndTime = System.currentTimeMillis() + rollDuration;
         }
     }
 
-    public void jab() {
+    public void jab() { //ATTACK JAB
         if (canJab()) {
             isJabbing = true;
             lastJabTime = System.currentTimeMillis();
         }
     }
 
-    public void swipe() {
+    public void swipe() { //SWIPE JAB
         if (canSwipe()) {
             isSwiping = true;
             lastSwipeTime = System.currentTimeMillis();
         }
     }
 
-    public void resetJab() {
+    public void resetJab() { //RESETTING JAB
         isJabbing = false;
         currentJabFrame = 0;
     }
 
-    public void resetSwipe() {
+    public void resetSwipe() { //RESETTING SWIPE
         isSwiping = false;
         currentSwipeFrame = 0;
     }
 
-    private void move(String direction, int speed, int leftBoundary, int rightBoundary, int topBoundary, int bottomBoundary) {
+    private void move(String direction, int speed, int leftBoundary, int rightBoundary, int topBoundary, int bottomBoundary) { //MOVE LOGIC
         switch (direction) {
             case "UP": y = Math.max(y - speed, topBoundary); break;
             case "DOWN": y = Math.min(y + speed, bottomBoundary); break;
@@ -213,7 +219,7 @@ public class Player {
     }
 
     public boolean isAttackingEnemy(Enemy enemy) {
-        // Use the attack hitbox dimensions
+        //USING HITBOX DIMENSIONS
         Rectangle attackHitbox = new Rectangle(
             x - ATTACK_HITBOX_WIDTH / 2,
             y - ATTACK_HITBOX_HEIGHT / 2,
@@ -221,7 +227,7 @@ public class Player {
             ATTACK_HITBOX_HEIGHT
         );
 
-        // Check if the attack hitbox intersects with the enemy's hitbox
+        //CHECKING IF HITBOXES INTERSECT
         return attackHitbox.intersects(enemy.getHitbox());
     }
     
@@ -229,11 +235,9 @@ public class Player {
         return this.health <= 0;
     }
     
-    private void handleDeath() {
-    // Add death-related code here
-    System.out.println("Player has died!");
-    // For example, stop player movement or trigger game over state
-}
+    private void handleDeath() { //RIP
+        System.out.println("Player has died!");
+    }
     public void setHealth(int health) {
         this.health = health;
     }
@@ -242,4 +246,14 @@ public class Player {
         this.x = x;
         this.y = y;
     }
+    
+    public void setUsername (String username) {
+        this.username = username;
+    }
+    
+    public String getUsername () {
+        return username;
+    }
+    
+    
 }
