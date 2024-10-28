@@ -35,6 +35,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
     private int initialX = 400;
     private int initialY = 300;
     private boolean isGameOver = false;
+    private boolean isPaused = false; // New variable to track pause state
 
     public GamePanel() {
         setPreferredSize(new Dimension(800, 720));
@@ -43,13 +44,13 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
         addKeyListener(this);
         
         addMouseListener(new MouseAdapter() {
-        @Override
-        public void mouseClicked(MouseEvent e) {
-            if (player.isDead() && resetButtonBounds.contains(e.getPoint())) {
-                resetGame(); 
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (player.isDead() && resetButtonBounds.contains(e.getPoint())) {
+                    resetGame(); 
+                }
             }
-        }
-    });
+        });
 
         player = new Player(initialX, initialY);
         enemies = new ArrayList<>();
@@ -97,6 +98,12 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
         drawHP(g);
         drawScore(g);
         drawControls(g);
+
+        if (isPaused) { // Display PAUSED message if the game is paused
+            g.setFont(new Font("Arial", Font.BOLD, 60));
+            g.setColor(Color.RED);
+            g.drawString("PAUSED", getWidth() / 2 - 100, getHeight() / 2);
+        }
     }
 
     private void drawBoundary(Graphics2D g2d) {
@@ -110,8 +117,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
     @Override
     public void run() {
         while (true) {
-            //Skip updates if the game is over
-            if (!isGameOver) {
+            if (!isGameOver && !isPaused) { // Skip updates if paused or game over
                 long currentTime = System.currentTimeMillis();
 
                 player.update(leftBoundary, rightBoundary, topBoundary, bottomBoundary);
@@ -166,7 +172,12 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
 
     @Override
     public void keyPressed(KeyEvent e) {
-        player.handleKeyPress(e);
+        if (e.getKeyCode() == KeyEvent.VK_ESCAPE && !isGameOver) { // Toggle pause with ESC if game not over
+            isPaused = !isPaused;
+            repaint();
+        } else {
+            player.handleKeyPress(e);
+        }
     }
 
     @Override
@@ -205,6 +216,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
         g.setColor(Color.BLACK);
         g.setFont(new Font("Arial", Font.BOLD, 40));
         g.drawString("Game Over", 250, 300);
+        g.drawString("SCORE:" + score, 250, 350);
     }
 
     private void drawResetButton(Graphics g) {
@@ -248,5 +260,6 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
         g.drawString("O = JAB ATTACK", startX + 550, startY - 25);
         g.drawString("P = SWIPE ATTACK", startX + 550, startY - 5);
         g.drawString("SPACE = ROLL", startX + 550, startY + 15);
+        g.drawString("ESC = PAUSE", startX + 550, startY + 35); // Added pause control
     }
 }
