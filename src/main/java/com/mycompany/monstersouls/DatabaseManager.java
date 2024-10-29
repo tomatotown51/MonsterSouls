@@ -7,19 +7,73 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 
 public class DatabaseManager { //HANDLES DATABASE OPERATIONS
-    private static final String DB_URL = "jdbc:derby://localhost:1527/MonsterSoulsDB";
-    private static final String USER = "DB"; // DATABASE USERNAME
-    private static final String PASSWORD = "DB"; // DATABASE PASSWORD
+    private static final String DB_URL = "jdbc:derby:MonsterSoulsDB;create=true";
+    private static final String USER = ""; // DATABASE USERNAME
+    private static final String PASSWORD = ""; // DATABASE PASSWORD
     private Connection connection;
 
     
      //CONSTRUCTOR
+    public DatabaseManager() {
+        try {
+            this.connection = DriverManager.getConnection(DB_URL, USER, PASSWORD);
+            createTablesIfNotExist();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    //CONSTRUCTOR WITH CONNECTION PARAMETER
     public DatabaseManager(Connection connection) {
         this.connection = connection;
-        
+        try {
+            if (this.connection == null || this.connection.isClosed()) {
+                // IF NULL CONNECTION, CREATE NEW
+                this.connection = DriverManager.getConnection(DB_URL, USER, PASSWORD);
+            }
+            createTablesIfNotExist();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    //CREATING TABLES IF THEY DONT EXIST ALREADY
+    private void createTablesIfNotExist() throws SQLException {
+        try (Statement stmt = connection.createStatement()) {
+            //CREATING ENEMY TABLE
+            stmt.executeUpdate("CREATE TABLE ENEMY (" +
+                    "ID INT PRIMARY KEY, " +
+                    "TYPE VARCHAR(50), " +
+                    "HEALTH INT, " +
+                    "SPEED INT" +
+                    ")");
+
+            //CREATING HIGHSCORES TABLE
+            stmt.executeUpdate("CREATE TABLE HIGHSCORES (" +
+                    "USERNAME VARCHAR(50) PRIMARY KEY, " +
+                    "SCORE INT, " +
+                    "TIMESTAMP TIMESTAMP" +
+                    ")");
+
+            //CREATING PLAYERDATA TABLE
+            stmt.executeUpdate("CREATE TABLE PLAYERDATA (" +
+                    "PLAYER_USERNAME VARCHAR(50) PRIMARY KEY, " +
+                    "X_POSITION INT, " +
+                    "Y_POSITION INT, " +
+                    "HEALTH INT" +
+                    ")");
+        } catch (SQLException e) {
+            if (e.getSQLState().equals("X0Y32")) {
+                //IF TABLE EXISTS, SKIP
+                System.out.println("Tables already exist, skipping creation.");
+            } else {
+                throw e;
+            }
+        }
     }
     
 
@@ -101,7 +155,7 @@ public class DatabaseManager { //HANDLES DATABASE OPERATIONS
                 insertStmt.setString(1, username);
                 insertStmt.executeUpdate();
             }
-            // Return player with starting coordinates
+            //RETURN PLAYER
             Player newPlayer = new Player(400, 300, 100);
             newPlayer.setUsername(username);
             return newPlayer;
@@ -192,26 +246,28 @@ public class DatabaseManager { //HANDLES DATABASE OPERATIONS
         return DriverManager.getConnection(DB_URL, USER, PASSWORD);
     }
     
+    //CHECKING IF CONNECTION IS VALID
     public boolean isConnectionValid() {
-    try {
-        return connection != null && connection.isValid(2);  // Timeout of 2 seconds
-    } catch (SQLException e) {
-        e.printStackTrace();
-        return false;
-    }
-}
-    
-    public void reconnect() {
-    if (!isConnectionValid()) {
         try {
-            connection = createConnection();
-            System.out.println("DatabaseManager: Reconnected to the database.");
+            return connection != null && connection.isValid(2);
         } catch (SQLException e) {
-            System.out.println("DatabaseManager: Reconnection failed.");
             e.printStackTrace();
+            return false;
         }
     }
-}
-
+    
+    //RECONNECTING
+    public void reconnect() {
+        if (!isConnectionValid()) {
+            try {
+                connection = createConnection();
+                System.out.println("DatabaseManager: Reconnected to the database.");
+            }
+            catch (SQLException e) {
+                System.out.println("DatabaseManager: Reconnection failed.");
+                e.printStackTrace();
+            }
+        }
+    }
     
 }
