@@ -106,4 +106,36 @@ public class DatabaseManager {
     public static Connection createConnection() throws SQLException {
     return DriverManager.getConnection(DB_URL, USER, PASSWORD);
 }
+    
+    public Player checkAndLoadPlayer(String username) throws SQLException {
+    String query = "SELECT HEALTH, X_POSITION, Y_POSITION FROM PLAYERDATA WHERE PLAYER_USERNAME = ?";
+    try (PreparedStatement statement = connection.prepareStatement(query)) {
+        statement.setString(1, username);
+        ResultSet rs = statement.executeQuery();
+
+        if (rs.next()) {
+            int health = rs.getInt("HEALTH");
+            int x = rs.getInt("X_POSITION");
+            int y = rs.getInt("Y_POSITION");
+
+            Player player = new Player(x, y, health);
+            player.setUsername(username); // Set the username separately
+            return player;
+        } else {
+            // Insert new player data with specified starting coordinates if the username doesn't exist
+            String insertQuery = "INSERT INTO PLAYERDATA (PLAYER_USERNAME, HEALTH, X_POSITION, Y_POSITION) VALUES (?, 100, 400, 300)";
+            try (PreparedStatement insertStmt = connection.prepareStatement(insertQuery)) {
+                insertStmt.setString(1, username);
+                insertStmt.executeUpdate();
+            }
+
+            // Return player with starting coordinates
+            Player newPlayer = new Player(400, 300, 100);
+            newPlayer.setUsername(username);
+            return newPlayer;
+        }
+    }
+}
+
+
 }

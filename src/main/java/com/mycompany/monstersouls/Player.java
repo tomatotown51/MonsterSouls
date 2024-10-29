@@ -19,7 +19,7 @@ public class Player {
     private static final int HITBOX_HEIGHT = 32; 
     private static final int ATTACK_HITBOX_WIDTH = 48; //PLAYER ATTACK DAMAGE HITBOX
     private static final int ATTACK_HITBOX_HEIGHT = 48; 
-    private String username = "PABLO";
+    private String username = "";
 
     private boolean up, down, left, right;
     private Image normalSprite;

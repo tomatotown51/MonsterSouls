@@ -57,7 +57,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
             e.printStackTrace();
         }
 
-        setPreferredSize(new Dimension(800, 720)); //WINDOW SIZE
+        setPreferredSize(new Dimension(800, 720)); //WINDOW SIZEsetP
         setFocusable(true);
         requestFocus();
         addKeyListener(this);
@@ -385,5 +385,11 @@ if (e.getKeyCode() == KeyEvent.VK_ESCAPE && !isGameOver) { //PAUSE
     public static int getRightBoundary() { return rightBoundary; }
     public static int getTopBoundary() { return topBoundary; }
     public static int getBottomBoundary() { return bottomBoundary; }
+    public void setPlayer(Player player) {
+        this.player = player;
+    }
+    public void setDatabaseManager(DatabaseManager dbManager) {
+        this.dbManager = dbManager;
+    }
 
 }
