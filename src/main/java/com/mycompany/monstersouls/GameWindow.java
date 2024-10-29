@@ -1,15 +1,16 @@
 package com.mycompany.monstersouls;
+
+//IMPORTS
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import java.awt.Dimension;
 import java.sql.SQLException;
 import javax.swing.JOptionPane;
 
-/**
- *
- * @author Thomas PC
- */
+
 public class GameWindow extends JFrame {
+    
+    //VARIABLES
     private MainMenu mainMenu;
     private GamePanel gamePanel;
     private DatabaseManager dbManager;
@@ -25,30 +26,34 @@ public class GameWindow extends JFrame {
         } catch (SQLException e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(this, "Failed to connect to the database.");
-            System.exit(1); // Exit if database connection fails
+            System.exit(1); //CLOSE IF DATABASE FAILS
         }
 
-        add(mainMenu);
+        add(mainMenu); //ADDING MAIN MANU TO FRAME
         pack();
         setLocationRelativeTo(null);
         setVisible(true);
     }
-
-    public void switchToGamePanel(Player player) {
-    remove(mainMenu);                // Remove the main menu panel
-    gamePanel = new GamePanel();     // Initialize GamePanel using the default constructor
-    gamePanel.setPlayer(player);     // Set the player
-    gamePanel.setDatabaseManager(dbManager); // Set the DatabaseManager
     
-    add(gamePanel);                  // Add GamePanel to the frame
-    gamePanel.setFocusable(true);    // Ensure GamePanel can capture key events
-    gamePanel.requestFocusInWindow(); // Request focus to ensure it captures key events
+    //SWITCHING TO ACTUAL GAME
+    public void switchToGamePanel(Player player) {
+        
+        remove(mainMenu);//GETTING RID OF MAIN MENU FROM FRAME
+        gamePanel = new GamePanel();//NEW GAMEPANEL
+    
+        //SETTING PLAYER AND DATABASE
+        gamePanel.setPlayer(player);     
+        gamePanel.setDatabaseManager(dbManager); 
+    
+        //ADDING GAMEPANEL TO FRAME
+        add(gamePanel);
+        gamePanel.setFocusable(true);
+        gamePanel.requestFocusInWindow();
 
-    pack();                          // Resize the window to fit the new panel's preferred size
-    revalidate();                    // Refresh layout
-    repaint();                       // Redraw frame
-}
-
-
+        //RESIZE WINDOW
+        pack();
+        revalidate();
+        repaint();
+    }
 }
 

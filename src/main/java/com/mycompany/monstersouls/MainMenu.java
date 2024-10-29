@@ -18,6 +18,8 @@ import javax.swing.SwingUtilities;
  * @author Thomas PC
  */
 public class MainMenu extends JPanel {
+    
+    //VARIABLES
     private JTextField usernameField;
     private JButton startButton;
     private DatabaseManager dbManager;
@@ -26,12 +28,10 @@ public class MainMenu extends JPanel {
         this.dbManager = dbManager;
         setLayout(new BorderLayout());
 
-        // Username input and button setup
+        //USERNAME INPUT & PANEL CONTROLS
         usernameField = new JTextField(15);
         startButton = new JButton("Start");
         JButton exitButton = new JButton("Exit");
-
-        // Add components to the panel
         JPanel panel = new JPanel();
         panel.add(new JLabel("Enter Username:"));
         panel.add(usernameField);
@@ -40,23 +40,38 @@ public class MainMenu extends JPanel {
 
         add(panel, BorderLayout.CENTER);
 
-        // Button listeners
+        //BUTTON LISTENERS
         startButton.addActionListener(e -> handleStartButton());
         exitButton.addActionListener(e -> System.exit(0));
     }
 
-    private void handleStartButton() {
-    String username = usernameField.getText().trim();
-    if (!username.isEmpty()) {
-        try {
-            Player player = dbManager.checkAndLoadPlayer(username);
-            ((GameWindow) SwingUtilities.getWindowAncestor(this)).switchToGamePanel(player);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Error accessing the database.");
+    private void handleStartButton() { //HANDLING START BUTTON
+        String username = usernameField.getText().trim();
+
+        //INPUT ERROR HANDLING
+        
+        //CHECKING FOR EMPTY USERNAME
+        if (username.isEmpty()) { 
+            JOptionPane.showMessageDialog(this, "Please enter a username.");
         }
-    } else {
-        JOptionPane.showMessageDialog(this, "Please enter a username.");
+        //CHECKING FOR INVALID LENGTH
+        else if (username.length() < 3 || username.length() > 15) {
+            JOptionPane.showMessageDialog(this, "Username must be between 3 and 15 characters.");
+        }
+        //CHECKING FOR INVALID CHARACTERS
+        else if (!username.matches("[a-zA-Z0-9_]+")) { 
+            JOptionPane.showMessageDialog(this, "Username must only contain letters, numbers, and underscores.");
+        }
+        else {
+            try {
+                Player player = dbManager.checkAndLoadPlayer(username); //CHECKING IF USERNAME EXISTS AND LOADING
+                ((GameWindow) SwingUtilities.getWindowAncestor(this)).switchToGamePanel(player);
+            }
+            catch (SQLException e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Error accessing the database.");
+            }
+        }
     }
-}
+
 }
