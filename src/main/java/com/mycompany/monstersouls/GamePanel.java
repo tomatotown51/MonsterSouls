@@ -48,8 +48,11 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
     public GamePanel() {
         player = new Player(initialX, initialY, 100); //int int int
         dbManager = new DatabaseManager(connection);
+        
         try {
-            connection = DriverManager.getConnection("jdbc:derby://localhost:1527/MonsterSoulsDB", "DB", "DB");
+            connection = DatabaseManager.createConnection();
+            dbManager = new DatabaseManager(connection);
+            System.out.println("Connected successfully to Database.");
         } catch (SQLException e) {
             e.printStackTrace();
         }

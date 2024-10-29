@@ -102,4 +102,8 @@ public class DatabaseManager {
     public static Connection getConnection() throws SQLException { //GET CONNECTION
         return DriverManager.getConnection(DB_URL, USER, PASSWORD);
     }
+    
+    public static Connection createConnection() throws SQLException {
+    return DriverManager.getConnection(DB_URL, USER, PASSWORD);
+}
 }
