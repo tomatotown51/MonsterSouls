@@ -47,6 +47,7 @@ public class MainMenu extends JPanel {
 
     private void handleStartButton() { //HANDLING START BUTTON
         String username = usernameField.getText().trim();
+        
 
         //INPUT ERROR HANDLING
         
@@ -64,6 +65,7 @@ public class MainMenu extends JPanel {
         }
         else {
             try {
+                
                 Player player = dbManager.checkAndLoadPlayer(username); //CHECKING IF USERNAME EXISTS AND LOADING
                 ((GameWindow) SwingUtilities.getWindowAncestor(this)).switchToGamePanel(player);
             }

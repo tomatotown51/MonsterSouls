@@ -19,6 +19,7 @@ public class DatabaseManager { //HANDLES DATABASE OPERATIONS
      //CONSTRUCTOR
     public DatabaseManager(Connection connection) {
         this.connection = connection;
+        
     }
     
 
@@ -89,11 +90,12 @@ public class DatabaseManager { //HANDLES DATABASE OPERATIONS
                 int y = rs.getInt("Y_POSITION");
 
                 Player player = new Player(x, y, health);
-                player.setUsername(username); // Set the username separately
+                player.setUsername(username); //SETTING USERNAME
+                System.out.println("USERNAME SET");
                 return player;
             }
             else {
-            // Insert new player data with specified starting coordinates if the username doesn't exist
+            //INSERT PLAYER DATA IF IT DOESNT EXIST
             String insertQuery = "INSERT INTO PLAYERDATA (PLAYER_USERNAME, HEALTH, X_POSITION, Y_POSITION) VALUES (?, 100, 400, 300)";
             try (PreparedStatement insertStmt = connection.prepareStatement(insertQuery)) {
                 insertStmt.setString(1, username);
@@ -189,5 +191,27 @@ public class DatabaseManager { //HANDLES DATABASE OPERATIONS
     public static Connection createConnection() throws SQLException { //CREATE A CONNECTION
         return DriverManager.getConnection(DB_URL, USER, PASSWORD);
     }
+    
+    public boolean isConnectionValid() {
+    try {
+        return connection != null && connection.isValid(2);  // Timeout of 2 seconds
+    } catch (SQLException e) {
+        e.printStackTrace();
+        return false;
+    }
+}
+    
+    public void reconnect() {
+    if (!isConnectionValid()) {
+        try {
+            connection = createConnection();
+            System.out.println("DatabaseManager: Reconnected to the database.");
+        } catch (SQLException e) {
+            System.out.println("DatabaseManager: Reconnection failed.");
+            e.printStackTrace();
+        }
+    }
+}
+
     
 }

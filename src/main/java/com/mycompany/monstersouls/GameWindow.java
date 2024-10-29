@@ -33,12 +33,15 @@ public class GameWindow extends JFrame {
         pack();
         setLocationRelativeTo(null);
         setVisible(true);
+        
     }
     
     //SWITCHING TO ACTUAL GAME
     public void switchToGamePanel(Player player) {
+        System.out.println("Switching to GamePanel...");
         
         remove(mainMenu);//GETTING RID OF MAIN MENU FROM FRAME
+
         gamePanel = new GamePanel();//NEW GAMEPANEL
     
         //SETTING PLAYER AND DATABASE
@@ -47,13 +50,17 @@ public class GameWindow extends JFrame {
     
         //ADDING GAMEPANEL TO FRAME
         add(gamePanel);
+        revalidate();
+        pack();
+        repaint();
         gamePanel.setFocusable(true);
         gamePanel.requestFocusInWindow();
 
+        
         //RESIZE WINDOW
-        pack();
-        revalidate();
-        repaint();
+        
+        
+        System.out.println("GamePanel switch complete.");
     }
 }
 

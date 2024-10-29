@@ -79,6 +79,8 @@ public class GamePanel extends JPanel implements Runnable, KeyListener { //GAME 
         //WINDOW PROPERTIES
         setPreferredSize(new Dimension(800, 720)); //WINDOW SIZE
         setFocusable(true);
+        
+        requestFocusInWindow();
         requestFocus();
         addKeyListener(this);
 
@@ -253,7 +255,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener { //GAME 
     
     @Override
     public void keyPressed(KeyEvent e) { 
-        dbManager = new DatabaseManager(connection); //NEW DB
+
        
         if (e.getKeyCode() == KeyEvent.VK_ESCAPE && !isGameOver) { //PAUSE GAME
             isPaused = !isPaused;
@@ -474,4 +476,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener { //GAME 
     public void setDatabaseManager(DatabaseManager dbManager) {
         this.dbManager = dbManager;
     }
+    
+    
+
 }

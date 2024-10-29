@@ -65,10 +65,11 @@ public class Enemy { //HANDLES ENEMIES
         //DRAWING ENEMY SPRITE
         g.drawImage(sprite, x - sprite.getWidth(null) / 2, y - sprite.getHeight(null) / 2, null);
         //DRAWING ENEMY HITBOX DEPENDING ON VARIABLE
-        while (toggleEnemyHitbox = true) {
+        if (toggleEnemyHitbox) {
             g.setColor(Color.YELLOW);
             g.drawRect(hitbox.x, hitbox.y, hitbox.width, hitbox.height);
         }
+
     }
     
 //ENEMY UPDATES
