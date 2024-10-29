@@ -28,9 +28,9 @@ public class Enemy {
     private int id;
     private String type;
     
-    private static final long DECISION_DELAY = 200; //TIME BWETEEN AI DESICIONS
-    private static final double CHASE_DISTANCE = 500; //DISTANCE BEFORE CHASING PLAYER
-    private static final double ATTACK_DISTANCE = 100; //DISTANCE BEFORE ATTACKING PLAYER
+    private static final long DECISION_DELAY = 100; //TIME BWETEEN AI DESICIONS
+    private static final double CHASE_DISTANCE = 300; //DISTANCE BEFORE CHASING PLAYER
+    private static final double ATTACK_DISTANCE = 30; //DISTANCE BEFORE ATTACKING PLAYER
     private EnemyState state = EnemyState.IDLE;
     private long lastDecisionTime = 0;
     

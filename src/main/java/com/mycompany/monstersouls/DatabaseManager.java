@@ -109,33 +109,78 @@ public class DatabaseManager {
     
     public Player checkAndLoadPlayer(String username) throws SQLException {
     String query = "SELECT HEALTH, X_POSITION, Y_POSITION FROM PLAYERDATA WHERE PLAYER_USERNAME = ?";
-    try (PreparedStatement statement = connection.prepareStatement(query)) {
-        statement.setString(1, username);
-        ResultSet rs = statement.executeQuery();
+        try (PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setString(1, username);
+            ResultSet rs = statement.executeQuery();
 
-        if (rs.next()) {
-            int health = rs.getInt("HEALTH");
-            int x = rs.getInt("X_POSITION");
-            int y = rs.getInt("Y_POSITION");
+            if (rs.next()) {
+                int health = rs.getInt("HEALTH");
+                int x = rs.getInt("X_POSITION");
+                int y = rs.getInt("Y_POSITION");
 
-            Player player = new Player(x, y, health);
-            player.setUsername(username); // Set the username separately
-            return player;
-        } else {
+                Player player = new Player(x, y, health);
+                player.setUsername(username); // Set the username separately
+                return player;
+            }
+            else {
             // Insert new player data with specified starting coordinates if the username doesn't exist
             String insertQuery = "INSERT INTO PLAYERDATA (PLAYER_USERNAME, HEALTH, X_POSITION, Y_POSITION) VALUES (?, 100, 400, 300)";
             try (PreparedStatement insertStmt = connection.prepareStatement(insertQuery)) {
                 insertStmt.setString(1, username);
                 insertStmt.executeUpdate();
             }
-
             // Return player with starting coordinates
             Player newPlayer = new Player(400, 300, 100);
             newPlayer.setUsername(username);
             return newPlayer;
+            }
+        }
+    }
+    
+    public void saveHighScore(String username, int score) throws SQLException {
+    // Check if the username already exists in the HIGHSCORES table
+    String selectQuery = "SELECT SCORE FROM HIGHSCORES WHERE USERNAME = ?";
+    try (PreparedStatement selectStmt = connection.prepareStatement(selectQuery)) {
+        selectStmt.setString(1, username);
+        ResultSet rs = selectStmt.executeQuery();
+
+        if (rs.next()) {
+            int existingScore = rs.getInt("SCORE");
+            // Update if the new score is higher
+            if (score > existingScore) {
+                String updateQuery = "UPDATE HIGHSCORES SET SCORE = ?, TIMESTAMP = CURRENT_TIMESTAMP WHERE USERNAME = ?";
+                try (PreparedStatement updateStmt = connection.prepareStatement(updateQuery)) {
+                    updateStmt.setInt(1, score);
+                    updateStmt.setString(2, username);
+                    updateStmt.executeUpdate();
+                }
+            }
+        } else {
+            // Insert a new record if username does not exist
+            String insertQuery = "INSERT INTO HIGHSCORES (USERNAME, SCORE, TIMESTAMP) VALUES (?, ?, CURRENT_TIMESTAMP)";
+            try (PreparedStatement insertStmt = connection.prepareStatement(insertQuery)) {
+                insertStmt.setString(1, username);
+                insertStmt.setInt(2, score);
+                insertStmt.executeUpdate();
+            }
         }
     }
 }
+    
+    public int loadHighScore(String username) throws SQLException {
+    String query = "SELECT SCORE FROM HIGHSCORES WHERE USERNAME = ?";
+    try (PreparedStatement stmt = connection.prepareStatement(query)) {
+        stmt.setString(1, username);
+        ResultSet rs = stmt.executeQuery();
+
+        if (rs.next()) {
+            return rs.getInt("SCORE");
+        } else {
+            return 0; // Return 0 if no high score exists for the user
+        }
+    }
+}
+
 
 
 }

@@ -43,16 +43,23 @@ public class GamePanel extends JPanel implements Runnable, KeyListener {
     private DatabaseManager dbManager;
     private Connection connection;
     private int enemyID = 1;
+    private int highScore = 0;
 
 
     public GamePanel() {
         player = new Player(initialX, initialY, 100); //int int int
         dbManager = new DatabaseManager(connection);
         
-        try {
+        try { //CONNECT TO DATABASE
             connection = DatabaseManager.createConnection();
             dbManager = new DatabaseManager(connection);
             System.out.println("Connected successfully to Database.");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        
+        try { //LOAD HIGHSCORE 
+            highScore = dbManager.loadHighScore(player.getUsername());
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -196,7 +203,7 @@ public void run() {
                 }
             }
             enemies.removeAll(enemiesToRemove);
-
+            checkPlayerDeath();
             repaint();
         }
         
@@ -226,6 +233,7 @@ if (e.getKeyCode() == KeyEvent.VK_ESCAPE && !isGameOver) { //PAUSE
         try {
             dbManager.savePlayerData(player);    // SAVING PLAYER DATA EVERY PAUSE
             dbManager.backupEnemies(enemies);    // SAVING ENEMY DATA EVERY PAUSE
+            dbManager.saveHighScore(player.getUsername(), score);
         } catch (SQLException ex) {
             ex.printStackTrace();
         }
@@ -276,26 +284,29 @@ if (e.getKeyCode() == KeyEvent.VK_ESCAPE && !isGameOver) { //PAUSE
         g.drawString("HP: " + player.getHealth(), leftBoundary + 5, bottomBoundary + 25);
     }
 
-    private void drawScore(Graphics g) { //DRAW SCORE
+    private void drawScore(Graphics g) {
         g.setColor(Color.YELLOW);
         g.setFont(new Font("Arial", Font.PLAIN, 16)); 
         g.drawString("Score: " + score, leftBoundary, bottomBoundary + 55);
+        g.drawString("High Score: " + highScore, leftBoundary, bottomBoundary + 75); // Display high score below
     }
 
-    private void displayGameOver(Graphics g) { //DISPLAY GAME OVER SCREEN
+    private void displayGameOver(Graphics g) {
         g.setColor(Color.BLACK);
         g.setFont(new Font("Arial", Font.BOLD, 40));
         g.drawString("Game Over", 250, 300);
         g.drawString("SCORE: " + score, 250, 350);
+        g.drawString("HIGH SCORE: " + highScore, 250, 400); // Add high score
     }
 
-    private void drawResetButton(Graphics g) { //RESTART BUTTON
-        g.setColor(Color.LIGHT_GRAY);
-        g.fillRect(resetButtonBounds.x, resetButtonBounds.y, resetButtonBounds.width, resetButtonBounds.height);
-        g.setColor(Color.BLACK);
-        g.setFont(new Font("Arial", Font.BOLD, 20));
-        g.drawString("RESTART", resetButtonBounds.x + 20, resetButtonBounds.y + 30);
-    }
+    private void drawResetButton(Graphics g) { // Restart button
+    resetButtonBounds.setLocation(250, 420); // Position reset button below high score
+    g.setColor(Color.LIGHT_GRAY);
+    g.fillRect(resetButtonBounds.x, resetButtonBounds.y, resetButtonBounds.width, resetButtonBounds.height);
+    g.setColor(Color.BLACK);
+    g.setFont(new Font("Arial", Font.BOLD, 20));
+    g.drawString("RESTART", resetButtonBounds.x + 20, resetButtonBounds.y + 30);
+}
 
     public void resetGame() { //RESET GAME
         try {
@@ -333,21 +344,34 @@ if (e.getKeyCode() == KeyEvent.VK_ESCAPE && !isGameOver) { //PAUSE
             }
         }
 
+        try {
+            highScore = dbManager.loadHighScore(player.getUsername()); // Reload high score on reset
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        
         lastEnemySpawnTime = System.currentTimeMillis();
 
         repaint();
     }
 
-    public void checkPlayerDeath() { //CHECKING IF PLAYER DIES
-        if (player.isDead()) {
-            isGameOver = true;
-            try {
-                dbManager.savePlayerData(player); //SAVING DATA
-            } catch (SQLException ex) {
-                ex.printStackTrace(); //ERROR PRINTING
+    public void checkPlayerDeath() {
+    if (player.isDead()) {
+        isGameOver = true;
+        
+        try {
+            dbManager.savePlayerData(player); // Save player data
+            // Save high score if the current score is a new record
+            if (score > highScore) {
+                dbManager.saveHighScore(player.getUsername(), score);
+                highScore = score; // Update local high score variable
             }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
         }
     }
+}
+
 
     private void drawControls(Graphics g) { //DRAWING CONTROLS
         g.setFont(new Font("SansSerif", Font.PLAIN, 14));
